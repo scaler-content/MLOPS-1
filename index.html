@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intro to MLOPS post read</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%230B0C0E%22 stroke=%22%23D9A441%22 stroke-width=%226%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===================== TOKENS ===================== */
+:root{
+  --bg:#0B0C0E;
+  --bg-raised:#16181B;
+  --bg-raised-2:#1D2023;
+  --border:#2B2E32;
+  --border-soft:#202225;
+  --text:#ECEDEF;
+  --text-soft:#A7ADB4;
+  --text-mute:#6E747B;
+  --amber:#D9A441;
+  --amber-dim:#8A6B2E;
+  --green:#5FBF8F;
+  --green-dim:#3C6B54;
+  --red:#C4675B;
+  --serif:'IBM Plex Serif', Georgia, serif;
+  --sans:'IBM Plex Sans', -apple-system, sans-serif;
+  --mono:'IBM Plex Mono', 'SF Mono', monospace;
+  --max:760px;
+  --wide:1040px;
+  --radius:3px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth; scroll-padding-top:90px;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-size:17px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
+  background-size:28px 28px;
+}
+::selection{ background:var(--amber-dim); color:var(--bg); }
+a{ color:var(--amber); text-decoration-color:rgba(217,164,65,0.35); text-underline-offset:3px; }
+a:hover{ text-decoration-color:var(--amber); }
+:focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+img,svg{ max-width:100%; }
+h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.22; margin:0 0 0.5em; color:var(--text); }
+p{ margin:0 0 1.1em; }
+.container{ max-width:var(--max); margin:0 auto; padding:0 24px; }
+.container-wide{ max-width:var(--wide); margin:0 auto; padding:0 24px; }
+
+/* ===================== PROGRESS BAR ===================== */
+#progress{
+  position:fixed; top:0; left:0; height:2px; width:0%;
+  background:linear-gradient(90deg, var(--amber-dim), var(--amber));
+  z-index:200; transition:width 60ms linear;
+}
+
+/* ===================== TOPBAR ===================== */
+.topbar{
+  position:fixed; top:0; left:0; right:0; z-index:150;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 24px; background:rgba(11,12,14,0.86);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--border-soft);
+}
+.topbar .mark{
+  font-family:var(--mono); font-size:13px; letter-spacing:0.02em; color:var(--text-soft);
+  display:flex; align-items:center; gap:8px;
+}
+.topbar .mark .dot{ width:7px; height:7px; border-radius:50%; background:var(--amber); display:inline-block; }
+.nav-toggle{
+  display:none; background:none; border:1px solid var(--border); color:var(--text-soft);
+  font-family:var(--mono); font-size:12px; padding:6px 10px; border-radius:var(--radius); cursor:pointer;
+}
+.progress-readout{ font-family:var(--mono); font-size:12px; color:var(--text-mute); }
+
+/* ===================== LAYOUT: TOC + ARTICLE ===================== */
+.layout{
+  display:grid; grid-template-columns:220px 1fr; gap:48px;
+  max-width:1180px; margin:0 auto; padding:0 24px;
+  align-items:start;
+}
+.toc{
+  position:sticky; top:92px; align-self:start;
+  max-height:calc(100vh - 120px); overflow-y:auto;
+  padding-right:8px;
+}
+.toc::-webkit-scrollbar{ width:4px; }
+.toc::-webkit-scrollbar-thumb{ background:var(--border); }
+.toc ol{ list-style:none; margin:0; padding:0; border-left:1px solid var(--border-soft); }
+.toc li{ margin:0; }
+.toc a{
+  display:block; padding:6px 0 6px 16px; font-size:13px; color:var(--text-mute);
+  text-decoration:none; border-left:2px solid transparent; margin-left:-1px;
+  transition:color .15s ease, border-color .15s ease;
+}
+.toc a:hover{ color:var(--text-soft); }
+.toc a.active{ color:var(--amber); border-left-color:var(--amber); }
+.toc .toc-label{ font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-mute); margin:0 0 10px 0; }
+
+article{ min-width:0; padding-bottom:80px; }
+
+/* ===================== HERO ===================== */
+.hero{
+  padding:150px 24px 70px; text-align:left; max-width:var(--wide); margin:0 auto;
+  border-bottom:1px solid var(--border-soft);
+}
+.hero .kicker{
+  font-family:var(--mono); font-size:13px; color:var(--amber);
+  display:flex; align-items:center; gap:10px; margin-bottom:22px;
+}
+.hero .kicker .rule{ width:32px; height:1px; background:var(--amber-dim); display:inline-block; }
+.hero h1{
+  font-size:clamp(2.4rem, 5vw, 3.6rem); max-width:14ch; letter-spacing:-0.01em;
+}
+.hero .dek{
+  font-family:var(--serif); font-style:italic; font-size:1.25rem; color:var(--text-soft);
+  max-width:42ch; margin-top:18px; line-height:1.5;
+}
+.hero .meta-row{
+  display:flex; gap:28px; margin-top:38px; flex-wrap:wrap;
+  font-family:var(--mono); font-size:12.5px; color:var(--text-mute);
+}
+.hero .meta-row strong{ color:var(--text-soft); font-weight:500; }
+
+/* ===================== SECTION SCAFFOLDING ===================== */
+section.block{ padding:64px 0 8px; }
+section.block:first-of-type{ padding-top:56px; }
+.section-num{
+  font-family:var(--mono); font-size:12.5px; color:var(--amber); letter-spacing:0.04em;
+  display:block; margin-bottom:10px;
+}
+.lede{ font-size:1.12rem; color:var(--text-soft); max-width:66ch; }
+.block h2{ font-size:1.85rem; max-width:22ch; }
+.block h3{ font-size:1.28rem; margin-top:1.6em; }
+.prose{ max-width:66ch; }
+.prose p, .prose ul, .prose ol{ max-width:66ch; }
+.prose li{ margin-bottom:0.4em; }
+.full{ max-width:100%; }
+
+blockquote.pull{
+  margin:2em 0; padding:0 0 0 22px; border-left:2px solid var(--amber);
+  font-family:var(--serif); font-style:italic; font-size:1.28rem; line-height:1.5;
+  color:var(--text); max-width:56ch;
+}
+blockquote.pull cite{ display:block; font-family:var(--mono); font-style:normal; font-size:12px; color:var(--text-mute); margin-top:10px; }
+
+.callout{
+  border:1px solid var(--border); background:var(--bg-raised);
+  border-left:3px solid var(--amber); border-radius:var(--radius);
+  padding:18px 22px; margin:1.6em 0; max-width:66ch;
+}
+.callout p:last-child{ margin-bottom:0; }
+.callout .callout-label{
+  font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--amber); margin-bottom:8px; display:block;
+}
+.callout.green{ border-left-color:var(--green); }
+.callout.green .callout-label{ color:var(--green); }
+
+/* ===================== TABLES ===================== */
+.table-wrap{ overflow-x:auto; margin:1.6em 0; border:1px solid var(--border); border-radius:var(--radius); }
+table{ border-collapse:collapse; width:100%; font-size:15px; min-width:480px; }
+th, td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+thead th{
+  font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em;
+  color:var(--text-mute); background:var(--bg-raised); font-weight:500;
+}
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr:hover{ background:rgba(255,255,255,0.02); }
+td code, p code, li code{
+  font-family:var(--mono); font-size:0.86em; background:var(--bg-raised-2);
+  padding:1px 6px; border-radius:2px; color:#E0B96A; border:1px solid var(--border-soft);
+}
+
+/* ===================== INCIDENT LOG (Section 1) ===================== */
+.incident-log{ margin:2em 0; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.incident-row{ border-bottom:1px solid var(--border-soft); }
+.incident-row:last-child{ border-bottom:none; }
+.incident-row button{
+  width:100%; text-align:left; background:var(--bg-raised); border:none; color:var(--text);
+  padding:16px 18px; cursor:pointer; display:flex; align-items:flex-start; gap:14px; font-family:var(--sans);
+  font-size:15px;
+}
+.incident-row button:hover{ background:var(--bg-raised-2); }
+.incident-row .idx{ font-family:var(--mono); color:var(--text-mute); font-size:13px; padding-top:2px; flex:none; }
+.incident-row .txt{ flex:1; }
+.incident-row .chev{ font-family:var(--mono); color:var(--amber); flex:none; transition:transform .2s ease; }
+.incident-row[data-open="true"] .chev{ transform:rotate(45deg); }
+.incident-detail{ max-height:0; overflow:hidden; transition:max-height .25s ease; background:var(--bg); }
+.incident-row[data-open="true"] .incident-detail{ max-height:200px; }
+.incident-detail-inner{ padding:2px 18px 18px 46px; color:var(--amber); font-size:14px; font-family:var(--mono); border-left:2px solid var(--amber-dim); margin-left:18px; }
+
+/* ===================== DEBT CARDS ===================== */
+.card-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px; margin:1.8em 0; }
+.debt-card{
+  border:1px solid var(--border); background:var(--bg-raised); border-radius:var(--radius);
+  padding:16px 18px;
+}
+.debt-card h4{ font-family:var(--sans); font-size:14.5px; font-weight:600; color:var(--amber); margin:0 0 8px; }
+.debt-card p{ font-size:14px; color:var(--text-soft); margin:0; }
+
+/* Lego vs sweater */
+.metaphor-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:2em 0; }
+@media (max-width:640px){ .metaphor-row{ grid-template-columns:1fr; } }
+.metaphor-card{ border:1px solid var(--border); border-radius:var(--radius); padding:20px; background:var(--bg-raised); }
+.metaphor-card .metaphor-icon{ margin-bottom:10px; }
+.metaphor-card h4{ font-family:var(--serif); font-size:1.1rem; margin:0 0 6px; }
+.metaphor-card p{ font-size:14px; color:var(--text-soft); margin:0; }
+
+/* ===================== VENN / INTERSECTION ===================== */
+.venn-wrap{ display:flex; justify-content:center; margin:2.2em 0; }
+.discipline-list{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:1.6em 0; }
+@media (max-width:640px){ .discipline-list{ grid-template-columns:1fr; } }
+.discipline-item{ border-top:2px solid var(--amber); padding-top:10px; }
+.discipline-item h4{ font-size:14px; margin:0 0 6px; font-family:var(--sans); font-weight:600; }
+.discipline-item p{ font-size:13.5px; color:var(--text-soft); margin:0; }
+
+.not-list{ list-style:none; margin:1.6em 0; padding:0; max-width:66ch; }
+.not-list li{
+  padding:14px 0 14px 30px; border-bottom:1px solid var(--border-soft); position:relative; font-size:15px; color:var(--text-soft);
+}
+.not-list li:first-child{ border-top:1px solid var(--border-soft); }
+.not-list li::before{ content:"×"; position:absolute; left:0; top:12px; color:var(--red); font-family:var(--mono); font-weight:600; }
+.not-list strong{ color:var(--text); }
+
+/* ===================== TABS ===================== */
+.tabs{ margin:1.8em 0; max-width:100%; }
+.tab-btns{ display:flex; gap:4px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.tab-btn{
+  font-family:var(--mono); font-size:12.5px; background:none; border:none; color:var(--text-mute);
+  padding:10px 16px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+.tab-btn:hover{ color:var(--text-soft); }
+.tab-btn.active{ color:var(--amber); border-bottom-color:var(--amber); }
+.tab-panel{ display:none; padding-top:22px; }
+.tab-panel.active{ display:block; }
+
+/* ===================== FOUR Cs ===================== */
+.fourc-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:2em 0; }
+@media (max-width:760px){ .fourc-grid{ grid-template-columns:1fr 1fr; } }
+.fourc-card{ border:1px solid var(--border); border-radius:var(--radius); padding:16px 14px; background:var(--bg-raised); text-align:left; }
+.fourc-card .fourc-letters{ font-family:var(--mono); font-size:1.5rem; color:var(--amber); display:block; margin-bottom:8px; }
+.fourc-card h4{ font-size:13px; margin:0 0 6px; }
+.fourc-card p{ font-size:12.5px; color:var(--text-soft); margin:0; }
+.fourc-card.emph{ border-color:var(--amber-dim); background:linear-gradient(180deg, rgba(217,164,65,0.07), transparent); }
+
+/* ===================== DRIFT DEMO ===================== */
+.drift-demo{ border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised); padding:24px; margin:2em 0; }
+.drift-demo .drift-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin-bottom:6px; }
+.drift-demo .drift-head h4{ font-size:14px; margin:0; font-family:var(--mono); color:var(--text-soft); text-transform:uppercase; letter-spacing:0.05em; }
+.drift-buttons{ display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 20px; }
+.drift-btn{
+  font-family:var(--mono); font-size:12px; background:var(--bg); border:1px solid var(--border); color:var(--text-soft);
+  padding:7px 12px; border-radius:20px; cursor:pointer;
+}
+.drift-btn.active{ background:var(--amber); color:#1a1305; border-color:var(--amber); font-weight:600; }
+.drift-chart{ display:flex; gap:28px; align-items:flex-end; height:180px; padding:0 6px 0; border-bottom:1px solid var(--border); }
+.drift-bar-group{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; height:100%; justify-content:flex-end; }
+.drift-bar{ width:44px; border-radius:3px 3px 0 0; transition:height .5s cubic-bezier(.2,.9,.3,1), background .3s ease; background:var(--text-mute); }
+.drift-bar-val{ font-family:var(--mono); font-size:13px; color:var(--text); }
+.drift-bar-label{ font-family:var(--mono); font-size:11px; color:var(--text-mute); text-align:center; }
+.drift-explain{ margin-top:18px; font-size:14.5px; color:var(--text-soft); min-height:70px; }
+.drift-explain strong{ color:var(--text); }
+.drift-caption{ font-family:var(--mono); font-size:11.5px; color:var(--text-mute); margin-top:16px; border-top:1px solid var(--border-soft); padding-top:12px; }
+
+.health-split{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:1.8em 0; }
+@media (max-width:640px){ .health-split{ grid-template-columns:1fr; } }
+.health-card{ border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
+.health-card.ok{ border-left:3px solid var(--green); }
+.health-card.bad{ border-left:3px solid var(--red); }
+.health-card h4{ font-size:13.5px; margin:0 0 8px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.04em; }
+.health-card p{ font-size:14px; color:var(--text-soft); margin:0; }
+
+/* ===================== LIFECYCLE DIAGRAM ===================== */
+.lifecycle-wrap{ margin:2.4em 0; }
+.lifecycle-svg-wrap{ display:flex; justify-content:center; margin-bottom:8px; }
+.stage-node{ cursor:pointer; }
+.stage-node circle{ transition:fill .2s ease, stroke .2s ease; }
+.stage-node text{ font-family:var(--mono); pointer-events:none; }
+.stage-node .stage-num{ fill:var(--bg); font-weight:600; }
+.stage-node .stage-label{ fill:var(--text-soft); font-size:11px; }
+.stage-node[data-active="true"] circle{ fill:var(--amber); stroke:var(--amber); }
+.stage-node[data-active="true"] .stage-num{ fill:#1a1305; }
+.stage-node[data-active="true"] .stage-label{ fill:var(--text); }
+.stage-node:hover circle{ stroke:var(--amber); }
+.lifecycle-detail{
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised);
+  padding:22px 24px; margin-top:6px;
+}
+.lifecycle-detail h4{ font-size:1.05rem; margin-bottom:6px; font-family:var(--sans); font-weight:600; color:var(--amber); }
+.lifecycle-detail .stage-sub{ font-family:var(--mono); font-size:11.5px; color:var(--text-mute); margin-bottom:14px; display:block; }
+.lifecycle-detail h5{ font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-mute); margin:16px 0 8px; }
+.lifecycle-detail ul{ margin:0; padding-left:18px; font-size:14.5px; color:var(--text-soft); }
+.lifecycle-detail li{ margin-bottom:5px; }
+.lifecycle-detail .mlops-contrib{ font-size:14.5px; color:var(--text); background:rgba(95,191,143,0.08); border:1px solid var(--green-dim); border-radius:var(--radius); padding:10px 14px; }
+.lifecycle-hint{ font-family:var(--mono); font-size:12px; color:var(--text-mute); text-align:center; margin-top:10px; }
+
+/* ===================== CODE BLOCK ===================== */
+.codeblock{
+  background:#0E0F11; border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 20px; overflow-x:auto; margin:1.6em 0; max-width:100%;
+}
+.codeblock .cb-label{ font-family:var(--mono); font-size:11px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:block; }
+.codeblock pre{ margin:0; font-family:var(--mono); font-size:13px; line-height:1.6; color:#C7CBD1; white-space:pre; }
+.codeblock .c-comment{ color:var(--text-mute); }
+.codeblock .c-key{ color:#E0B96A; }
+.codeblock .c-str{ color:var(--green); }
+
+.compare-before-after{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:1.8em 0; }
+@media (max-width:760px){ .compare-before-after{ grid-template-columns:1fr; } }
+.metadata-json{ font-family:var(--mono); font-size:12.5px; color:var(--text-soft); background:#0E0F11; border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; overflow-x:auto; }
+.metadata-json .k{ color:#E0B96A; } .metadata-json .v{ color:var(--green); }
+
+/* ===================== PRINCIPLE CARDS ===================== */
+.principle-list{ margin:2em 0; display:flex; flex-direction:column; gap:12px; }
+.principle{ border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised); overflow:hidden; }
+.principle summary{
+  list-style:none; cursor:pointer; padding:18px 20px; display:flex; align-items:center; gap:16px;
+  font-family:var(--sans); font-weight:600; font-size:15.5px;
+}
+.principle summary::-webkit-details-marker{ display:none; }
+.principle summary .p-num{ font-family:var(--mono); color:var(--amber); font-size:14px; flex:none; }
+.principle summary .p-chev{ margin-left:auto; font-family:var(--mono); color:var(--text-mute); transition:transform .2s ease; }
+.principle[open] summary .p-chev{ transform:rotate(180deg); }
+.principle-body{ padding:0 20px 20px 56px; font-size:14.5px; color:var(--text-soft); }
+.principle-body .p-block{ margin-bottom:14px; }
+.principle-body .p-tag{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-mute); display:block; margin-bottom:4px; }
+.principle-body .p-caveat{ border-left:2px solid var(--amber-dim); padding-left:12px; margin-top:10px; font-style:italic; }
+
+/* ===================== MATURITY ===================== */
+.maturity-tabs{ display:flex; gap:8px; margin:1.8em 0 0; flex-wrap:wrap; }
+.mat-btn{
+  flex:1; min-width:150px; text-align:left; background:var(--bg-raised); border:1px solid var(--border);
+  color:var(--text-soft); padding:14px 16px; border-radius:var(--radius); cursor:pointer; font-family:var(--sans);
+}
+.mat-btn .mat-level{ font-family:var(--mono); font-size:11px; color:var(--text-mute); display:block; margin-bottom:4px; }
+.mat-btn .mat-title{ font-size:14px; font-weight:600; color:var(--text); }
+.mat-btn.active{ border-color:var(--amber); background:linear-gradient(180deg, rgba(217,164,65,0.09), var(--bg-raised)); }
+.mat-btn.active .mat-level{ color:var(--amber); }
+.mat-panel{ display:none; border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius); padding:22px 22px 6px; background:var(--bg-raised); }
+.mat-panel.active{ display:block; }
+.mat-panel ul{ font-size:14.5px; color:var(--text-soft); padding-left:18px; }
+.mat-panel li{ margin-bottom:7px; }
+.mat-panel .mat-note{ font-size:14px; color:var(--text-soft); border-top:1px solid var(--border-soft); margin-top:14px; padding-top:14px; }
+
+/* Checklist tool */
+.checklist-tool{ border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised); padding:22px 24px; margin:2.2em 0; }
+.checklist-tool h4{ font-size:1.05rem; margin:0 0 4px; }
+.checklist-tool .ct-sub{ font-size:13.5px; color:var(--text-soft); margin-bottom:18px; }
+.checklist-items{ display:flex; flex-direction:column; gap:2px; }
+.checklist-item{
+  display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border-soft); cursor:pointer;
+}
+.checklist-item input{ margin-top:3px; accent-color:var(--amber); width:16px; height:16px; flex:none; }
+.checklist-item .ci-num{ font-family:var(--mono); font-size:12px; color:var(--text-mute); flex:none; padding-top:1px; }
+.checklist-item span.ci-text{ font-size:14.5px; color:var(--text-soft); }
+.checklist-item.checked span.ci-text{ color:var(--text); }
+.checklist-result{
+  margin-top:20px; padding:16px 18px; border-radius:var(--radius); border:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  font-family:var(--mono); background:var(--bg);
+}
+.checklist-result .cr-score{ font-size:1.4rem; color:var(--amber); }
+.checklist-result .cr-level{ font-size:13px; color:var(--text-soft); }
+.checklist-result .cr-hint{ width:100%; font-size:13px; color:var(--text-mute); font-family:var(--sans); margin-top:6px; }
+
+/* ===================== PITFALLS ===================== */
+.pitfall-list{ counter-reset:pit; margin:2em 0; }
+.pitfall{ border-bottom:1px solid var(--border-soft); padding:18px 0; display:grid; grid-template-columns:44px 1fr; gap:14px; }
+.pitfall .pit-num{ font-family:var(--serif); font-size:1.6rem; color:var(--border); font-style:italic; }
+.pitfall h4{ font-size:15.5px; margin:0 0 6px; }
+.pitfall p{ font-size:14.5px; color:var(--text-soft); margin:0; }
+
+/* ===================== GLOSSARY ===================== */
+.glossary-search{
+  width:100%; max-width:360px; padding:10px 14px; background:var(--bg-raised); border:1px solid var(--border);
+  color:var(--text); border-radius:var(--radius); font-family:var(--sans); font-size:14px; margin:1.6em 0 20px;
+}
+.glossary-search::placeholder{ color:var(--text-mute); }
+.glossary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 32px; }
+@media (max-width:700px){ .glossary-grid{ grid-template-columns:1fr; } }
+.gloss-item{ padding:14px 0; border-bottom:1px solid var(--border-soft); }
+.gloss-item dt{ font-family:var(--mono); font-weight:600; color:var(--amber); font-size:14px; margin-bottom:4px; }
+.gloss-item dd{ margin:0; font-size:14px; color:var(--text-soft); }
+.gloss-item[hidden]{ display:none; }
+.gloss-empty{ font-size:14px; color:var(--text-mute); font-family:var(--mono); padding:20px 0; }
+
+/* ===================== REFERENCES ===================== */
+.ref-group{ margin-bottom:26px; }
+.ref-group h4{ font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-mute); margin-bottom:10px; }
+.ref-list{ list-style:none; margin:0; padding:0; }
+.ref-list li{ padding:9px 0; border-bottom:1px solid var(--border-soft); font-size:14.5px; color:var(--text-soft); }
+.ref-list li em{ color:var(--text); font-style:italic; }
+
+/* ===================== SUMMARY ===================== */
+.summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:2em 0; }
+@media (max-width:640px){ .summary-grid{ grid-template-columns:1fr; } }
+.summary-card{ border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; background:var(--bg-raised); }
+.summary-card h4{ font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--amber); margin:0 0 8px; }
+.summary-card p{ font-size:14.5px; color:var(--text-soft); margin:0; }
+.loop-line{ font-family:var(--mono); font-size:13px; color:var(--text-soft); text-align:center; padding:16px; border:1px dashed var(--border); border-radius:var(--radius); margin:1.6em 0; }
+
+/* ===================== FOOTER ===================== */
+footer{
+  border-top:1px solid var(--border-soft); margin-top:60px; padding:40px 0 60px;
+  max-width:var(--wide); margin-left:auto; margin-right:auto; padding-left:24px; padding-right:24px;
+}
+footer .foot-title{ font-family:var(--serif); font-size:1.1rem; color:var(--text); }
+footer .foot-sub{ font-family:var(--mono); font-size:12px; color:var(--text-mute); margin-top:8px; }
+footer .back-top{ font-family:var(--mono); font-size:12px; color:var(--text-mute); margin-top:24px; display:inline-block; }
+
+hr.rule{ border:none; border-top:1px solid var(--border-soft); margin:3em 0; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width:980px){
+  .layout{ grid-template-columns:1fr; }
+  .toc{
+    position:fixed; top:52px; left:0; right:0; bottom:0; background:var(--bg);
+    padding:20px 24px; transform:translateX(-100%); transition:transform .25s ease; z-index:140;
+    max-height:none; overflow-y:auto;
+  }
+  .toc.open{ transform:translateX(0); }
+  .nav-toggle{ display:inline-block; }
+}
+@media (max-width:640px){
+  body{ font-size:16px; }
+  .hero{ padding:120px 20px 50px; }
+  .fourc-grid{ grid-template-columns:1fr 1fr; }
+  .drift-chart{ gap:14px; }
+  .lifecycle-svg-wrap svg{ width:100%; height:auto; }
+}
+@media (prefers-reduced-motion:reduce){
+  *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="topbar">
+  <span class="mark"><span class="dot"></span>INTRO TO MLOPS POST READ</span>
+  <span class="progress-readout" id="readout">00%</span>
+  <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="toc">Contents</button>
+</div>
+
+<header class="hero">
+  <div class="kicker"><span class="rule"></span>CLASS 1 &nbsp;·&nbsp; FOUNDATIONS</div>
+  <h1>Introduction to MLOps</h1>
+  <p class="dek">A model is not a deliverable. The system around it is — and that system is what this reading is about.</p>
+  <div class="meta-row">
+    <span><strong>Reading time</strong> ~28 min</span>
+    <span><strong>Format</strong> Concepts, one worked demo, three interactive tools</span>
+    <span><strong>Prerequisite</strong> Comfort training a model in a notebook</span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="Table of contents">
+    <p class="toc-label">On this page</p>
+    <ol id="tocList">
+      <li><a href="#problem">1. Why projects die after the notebook</a></li>
+      <li><a href="#definition">2. What is MLOps?</a></li>
+      <li><a href="#axes">3. DevOps vs. MLOps</a></li>
+      <li><a href="#lifecycle">4. The ML lifecycle</a></li>
+      <li><a href="#reproducibility">4.1 Reproducibility in practice</a></li>
+      <li><a href="#principles">5. Six principles</a></li>
+      <li><a href="#maturity">6. Maturity levels</a></li>
+      <li><a href="#roles">7. Roles</a></li>
+      <li><a href="#tools">8. The tool landscape</a></li>
+      <li><a href="#pitfalls">9. Common pitfalls</a></li>
+      <li><a href="#summary">10. Summary</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#references">References</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <!-- ============ PREFACE ============ -->
+    <section class="block" id="preface">
+      <div class="prose">
+        <p class="lede">Most machine learning courses end where the real work begins. You load data, engineer some features, train a model, print <code>accuracy: 0.94</code>, and the notebook ends. In industry, that notebook is roughly the first 5% of the job. The remaining 95% is everything required to make that model run reliably, repeatedly, and safely for months or years while the data underneath it keeps changing.</p>
+        <p><strong>MLOps is the discipline that covers that other 95%.</strong> Every tool you'll eventually touch — an experiment tracker, a container, a CI pipeline, a model registry — is a tool that solves one specific MLOps problem. Learn the tools without the problems and you get a toolbox with no judgment. This reading builds the judgment first.</p>
+      </div>
+      <div class="callout">
+        <span class="callout-label">By the end of this reading, you can</span>
+        <p>Explain why ML systems fail in production for reasons that have nothing to do with model accuracy — describe the ML lifecycle and where it breaks — apply six core MLOps principles — place any project on a maturity scale and name its next gap — and take a training script from "trust me" to "verify me."</p>
+      </div>
+    </section>
+
+    <!-- ============ 1. THE PROBLEM ============ -->
+    <section class="block" id="problem">
+      <span class="section-num">01 / Motivation</span>
+      <h2>Why ML projects die after the notebook</h2>
+      <div class="prose">
+        <p class="lede">This story isn't hypothetical. Some version of it happens at nearly every company that adopts ML.</p>
+        <p>A retail bank builds a fraud detection model. A data scientist spends six weeks on it in a notebook. Final numbers: <strong>0.96 ROC-AUC</strong> on the held-out test set. Leadership is thrilled. The model is approved for production. Then reality arrives.</p>
+      </div>
+
+      <div class="incident-log" id="incidentLog">
+        <!-- rows injected by JS from data below, but keep static fallback -->
+      </div>
+
+      <div class="prose">
+        <p>Read that log again and notice something important: <strong>not one of those failures is a modelling problem.</strong> The model was fine. The <em>system around the model</em> did not exist.</p>
+        <p>The bottleneck is almost never the algorithm — a widely cited industry observation is that most ML models never reach production, and of those that do, a large share silently degrade. It's engineering, process, and operations.</p>
+      </div>
+
+      <blockquote class="pull">A machine learning model is not a deliverable. A machine learning <em>system</em> is the deliverable — the model is one component inside it, usually the smallest one.<cite>The core insight of this course</cite></blockquote>
+
+      <h3>Hidden technical debt</h3>
+      <div class="prose">
+        <p>In 2015, a team of Google engineers (Sculley et al., published at NeurIPS) argued that only a small fraction of the code in a real ML system is the ML code itself — the rest is infrastructure: data collection, feature extraction, verification, configuration, serving, monitoring, process management.</p>
+        <p>They coined a phrase worth memorizing: <strong>changing anything changes everything</strong> — the CACE principle. In ordinary software, you can change a module and reason about the blast radius. In an ML system, changing one input feature changes the learned weights of every other feature. There are no isolated changes.</p>
+      </div>
+
+      <div class="metaphor-row">
+        <div class="metaphor-card">
+          <svg class="metaphor-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="22" width="14" height="14" rx="2" stroke="#5FBF8F" stroke-width="2"/><rect x="22" y="22" width="14" height="14" rx="2" stroke="#5FBF8F" stroke-width="2"/><rect x="13" y="6" width="14" height="14" rx="2" stroke="#5FBF8F" stroke-width="2"/></svg>
+          <h4>Traditional software is Lego</h4>
+          <p>Swap one brick and the rest of the structure holds. You can reason locally about a change.</p>
+        </div>
+        <div class="metaphor-card">
+          <svg class="metaphor-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M6 34 Q6 8 20 8 Q34 8 34 34" stroke="#D9A441" stroke-width="2" fill="none"/><path d="M10 30 Q10 14 20 14 Q30 14 30 30" stroke="#D9A441" stroke-width="2" fill="none"/><path d="M14 26 Q14 20 20 20 Q26 20 26 26" stroke="#D9A441" stroke-width="2" fill="none"/></svg>
+          <h4>A model is a knitted sweater</h4>
+          <p>Pull one thread and the shape of the whole garment changes. This is why ML systems need <em>stronger</em> engineering discipline than ordinary software, not weaker.</p>
+        </div>
+      </div>
+
+      <p class="prose">The paper catalogues forms of ML-specific technical debt worth knowing by name:</p>
+      <div class="card-grid">
+        <div class="debt-card"><h4>Entanglement</h4><p>Features aren't independent; touching one perturbs the whole model (CACE).</p></div>
+        <div class="debt-card"><h4>Correction cascades</h4><p>A model built to patch another model's errors, then a third to patch the second. Nothing can be retrained independently.</p></div>
+        <div class="debt-card"><h4>Undeclared consumers</h4><p>Teams silently consume your model's output; you can't change or retire it without breaking them.</p></div>
+        <div class="debt-card"><h4>Data dependency debt</h4><p>Your model depends on an upstream table nobody owns, that someone can change without telling you.</p></div>
+        <div class="debt-card"><h4>Configuration debt</h4><p>Dozens of hyperparameters, thresholds, and paths scattered across scripts with no single source of truth.</p></div>
+        <div class="debt-card"><h4>Pipeline jungles</h4><p>Data prep built up as an organic pile of scripts no one can rerun end to end.</p></div>
+        <div class="debt-card"><h4>Dead experimental paths</h4><p><code>if use_new_features_v2:</code> branches never removed, silently affecting behavior.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ 2. DEFINITION ============ -->
+    <section class="block" id="definition">
+      <span class="section-num">02 / Definitions</span>
+      <h2>What is MLOps?</h2>
+      <div class="prose">
+        <p class="lede"><strong>MLOps</strong> is the set of practices, principles, and tooling for reliably building, deploying, and maintaining machine learning systems in production.</p>
+        <p>A more useful working definition for engineers: MLOps is what turns a model into a <strong>service</strong> — something with a version, an owner, a deployment process, a monitoring dashboard, a rollback plan, and a defined path for improvement.</p>
+        <p>MLOps sits at the intersection of three established disciplines. Each contributes something non-negotiable, and MLOps adds what none of them handle on their own: <strong>the model as a versioned, decaying, data-dependent artifact.</strong></p>
+      </div>
+
+      <div class="venn-wrap">
+        <svg width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Venn diagram: Machine Learning, Software Engineering and DevOps, and Data Engineering intersecting to form MLOps">
+          <circle cx="120" cy="134" r="113" fill="none" stroke="#5FBF8F" stroke-width="1.6"/>
+          <circle cx="280" cy="134" r="113" fill="none" stroke="#D9A441" stroke-width="1.6"/>
+          <circle cx="200" cy="272" r="113" fill="none" stroke="#C4675B" stroke-width="1.6"/>
+          <text x="55" y="85" fill="#A7ADB4" font-family="IBM Plex Mono" font-size="12">Machine</text>
+          <text x="55" y="101" fill="#A7ADB4" font-family="IBM Plex Mono" font-size="12">Learning</text>
+          <text x="350" y="85" fill="#A7ADB4" font-family="IBM Plex Mono" font-size="12" text-anchor="end">Software Eng.</text>
+          <text x="350" y="101" fill="#A7ADB4" font-family="IBM Plex Mono" font-size="12" text-anchor="end">/ DevOps</text>
+          <text x="200" y="340" fill="#A7ADB4" font-family="IBM Plex Mono" font-size="12" text-anchor="middle">Data Engineering</text>
+          <text x="200" y="188" fill="#ECEDEF" font-family="IBM Plex Serif" font-style="italic" font-size="20" text-anchor="middle">MLOps</text>
+        </svg>
+      </div>
+
+      <div class="discipline-list">
+        <div class="discipline-item"><h4>From software engineering</h4><p>Version control, code review, testing, packaging, releases, rollbacks.</p></div>
+        <div class="discipline-item"><h4>From DevOps</h4><p>Automation, CI/CD, containerization, infrastructure as code, observability, on-call.</p></div>
+        <div class="discipline-item"><h4>From data engineering</h4><p>Reliable pipelines, schema contracts, data quality gates, lineage.</p></div>
+      </div>
+
+      <h3>What MLOps is not</h3>
+      <ul class="not-list">
+        <li><strong>Not a tool.</strong> Not "MLflow" or "Kubeflow" or "SageMaker" — those are implementations. You can do good MLOps with a shell script and disciplined Git usage, and terrible MLOps with a million-dollar platform.</li>
+        <li><strong>Not just deployment.</strong> Deployment is one stage. Monitoring, retraining, governance, and rollback are equally part of it.</li>
+        <li><strong>Not only for large companies.</strong> A two-person team with one model benefits immediately from pinned dependencies, a seed, and a run log. Scale changes which practices pay off, not whether they matter.</li>
+        <li><strong>Not a separate team's problem.</strong> In most organizations, the data scientist who trained the model is expected to understand how it ships and how it's monitored.</li>
+        <li><strong>Not about perfection.</strong> It's about maturity levels — knowing where you are, and what the next improvement should be.</li>
+      </ul>
+    </section>
+
+    <!-- ============ 3. AXES ============ -->
+    <section class="block" id="axes">
+      <span class="section-num">03 / Comparison</span>
+      <h2>DevOps vs. MLOps: three axes of difference</h2>
+      <div class="prose">
+        <p class="lede">If DevOps already solved software delivery, why a new discipline? DevOps solves most of it — but ML systems differ in three structural ways, and each difference forces new practices.</p>
+      </div>
+
+      <div class="tabs" id="axesTabs">
+        <div class="tab-btns" role="tablist">
+          <button class="tab-btn active" data-tab="ax1" role="tab" aria-selected="true">Axis 1 — What you version</button>
+          <button class="tab-btn" data-tab="ax2" role="tab" aria-selected="false">Axis 2 — What "correct" means</button>
+          <button class="tab-btn" data-tab="ax3" role="tab" aria-selected="false">Axis 3 — Decay</button>
+        </div>
+
+        <div class="tab-panel active" data-panel="ax1">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th></th><th>DevOps</th><th>MLOps</th></tr></thead>
+              <tbody>
+                <tr><td>Versioned artifacts</td><td>Code</td><td>Code + data + model + features + config + environment</td></tr>
+                <tr><td>"What produced this output?"</td><td>The commit SHA</td><td>The commit SHA <em>and</em> the training data snapshot <em>and</em> the hyperparameters <em>and</em> the library versions</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="prose">In DevOps, <code>git log</code> gives you the full story. In MLOps it gives you the screenplay but not which actors turned up that day: two engineers can run byte-identical code and get different models, because the data changed. This single fact is why data versioning and experiment tracking exist.</p>
+        </div>
+
+        <div class="tab-panel" data-panel="ax2">
+          <p class="prose">Traditional software is <strong>deterministic and specified</strong>: <code>add(2, 2)</code> must return <code>4</code>. A unit test passes or fails — binary. An ML model is <strong>statistical and unspecified</strong>: there's no single correct output for a given input, only a distribution of acceptable behaviour.</p>
+          <ul class="prose">
+            <li>You can't assert <code>predict(x) == y</code>. You assert <code>roc_auc >= 0.93 on the holdout set</code>.</li>
+            <li>New test types DevOps has no concept of: <strong>data validation</strong> (is the schema and distribution as expected?), <strong>model quality gates</strong> (does the candidate beat the incumbent?), <strong>behavioural tests</strong> (does the prediction move the right way as a key feature increases?), <strong>fairness checks</strong> (is performance uniform across segments?).</li>
+            <li>Passing tests never proves correctness — only that the model hasn't obviously regressed.</li>
+          </ul>
+        </div>
+
+        <div class="tab-panel" data-panel="ax3">
+          <p class="prose">This is the most important difference, and the one that surprises people coming from software. <strong>Deployed code doesn't get worse on its own.</strong> A correctly functioning API endpoint deployed in January behaves identically in December if nothing changes. <strong>A deployed model does get worse on its own</strong>, because the world it learned from moves away from the world it now sees.</p>
+          <div class="metaphor-row">
+            <div class="metaphor-card"><h4>Code is a bridge</h4><p>Built correctly, it still stands in December.</p></div>
+            <div class="metaphor-card"><h4>A model is a map</h4><p>Printed correctly, still accurate — of a city that has since built three new roads and closed a fourth. Nothing in the map changed. That's precisely the problem.</p></div>
+          </div>
+          <p class="prose">Four mechanisms drive it: <strong>data drift</strong> (the input distribution shifts), <strong>concept drift</strong> (the input→output relationship itself shifts), <strong>upstream changes</strong> (a column silently changes from dollars to cents), and <strong>feedback loops</strong> (the model's own decisions shape the data it's later retrained on).</p>
+        </div>
+      </div>
+
+      <h3>The four C's</h3>
+      <p class="prose">The operational consequence: an ML system is never "done." It needs continuous monitoring and a defined retraining path — which is why MLOps extends CI/CD with two more C's.</p>
+      <div class="fourc-grid">
+        <div class="fourc-card"><span class="fourc-letters">CI</span><h4>Continuous Integration</h4><p>Test and build on every change; for ML this also means validating data and models.</p></div>
+        <div class="fourc-card"><span class="fourc-letters">CD</span><h4>Continuous Delivery</h4><p>Ship the validated artifact to an environment automatically once CI passes.</p></div>
+        <div class="fourc-card emph"><span class="fourc-letters">CT</span><h4>Continuous Training</h4><p>Retrain on fresh data automatically, on a schedule, drift alert, or new data volume.</p></div>
+        <div class="fourc-card emph"><span class="fourc-letters">CM</span><h4>Continuous Monitoring</h4><p>Watch data quality, prediction distributions, and business metrics — always on.</p></div>
+      </div>
+
+      <h3>Making drift concrete</h3>
+      <div class="prose">
+        <p>A logistic regression is trained on one quarter of fraud data — where fraud looks like <em>large transactions at high velocity</em> — and evaluated on a held-out slice of the same quarter. No code changes between here and the next quarter; only the world does.</p>
+      </div>
+
+      <div class="drift-demo">
+        <div class="drift-head">
+          <h4>ROC-AUC, same model, three scenarios</h4>
+        </div>
+        <div class="drift-buttons" id="driftButtons">
+          <button class="drift-btn active" data-scenario="combined">Combined (deployed reality)</button>
+          <button class="drift-btn" data-scenario="data">Isolate: pure data drift</button>
+          <button class="drift-btn" data-scenario="concept">Isolate: pure concept drift</button>
+        </div>
+        <div class="drift-chart" id="driftChart">
+          <div class="drift-bar-group">
+            <span class="drift-bar-val" id="barVal1">0.855</span>
+            <div class="drift-bar" id="bar1" style="height:0"></div>
+            <span class="drift-bar-label">Q1 holdout<br>(training world)</span>
+          </div>
+          <div class="drift-bar-group">
+            <span class="drift-bar-val" id="barVal2">0.556</span>
+            <div class="drift-bar" id="bar2" style="height:0"></div>
+            <span class="drift-bar-label" id="bar2label">Q2<br>(deployed world)</span>
+          </div>
+        </div>
+        <div class="drift-explain" id="driftExplain">
+          <strong>Combined drift.</strong> Fraudsters adapted — they moved from large, infrequent transactions to many small ones at higher velocity — so both the inputs and the input→output relationship shifted at once. AUC falls from 0.855 to 0.556, barely better than guessing, while every conventional health signal (uptime, latency, error rate) stays green.
+        </div>
+        <div class="drift-caption">Q1 → Q2, N = 8,000 transactions, logistic regression, seeded reproduction of the course's own drift demo.</div>
+      </div>
+
+      <div class="health-split">
+        <div class="health-card ok"><h4>Service health (DevOps)</h4><p>Latency, throughput, error rate, CPU, memory. Tells you the <em>system</em> is alive.</p></div>
+        <div class="health-card bad"><h4>Model health (MLOps)</h4><p>Input distributions, prediction distributions, feature nulls, segment performance, business KPIs, and — once labels arrive — actual accuracy. Tells you the <em>predictions</em> are still worth trusting.</p></div>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">The asymmetry to remember</span>
+        <p>Input drift is an alert, not an incident — it says the model is operating outside validated conditions, which is a reason to look, not proof anything is broken. Data drift is detectable from inputs alone, in real time, without labels. <strong>Concept drift is the one that actually destroys performance</strong> — and detecting it generally needs labels, which arrive late or never. Much of practical monitoring design follows from that one trade-off.</p>
+      </div>
+    </section>
+
+    <!-- ============ 4. LIFECYCLE ============ -->
+    <section class="block" id="lifecycle">
+      <span class="section-num">04 / Systems view</span>
+      <h2>The machine learning lifecycle</h2>
+      <div class="prose">
+        <p class="lede">Everything in MLOps organizes around this lifecycle. Learn the map and every tool you'll meet later finds its place on it. Two properties matter more than the boxes: it's a <strong>loop, not a line</strong> — the arrow from monitoring back to data is the whole point — and <strong>every arrow is a handoff</strong>, and every handoff is where things break.</p>
+        <p>Click a stage to read what happens there, what typically goes wrong, and what MLOps contributes.</p>
+      </div>
+
+      <div class="lifecycle-wrap">
+        <div class="lifecycle-svg-wrap">
+          <svg id="lifecycleSvg" width="520" height="520" viewBox="0 0 520 520" role="img" aria-label="ML lifecycle loop with eight stages">
+            <circle cx="260" cy="260" r="175" fill="none" stroke="#2B2E32" stroke-width="1.5" stroke-dasharray="2 6"/>
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#6E747B"/></marker>
+            </defs>
+            <!-- stage nodes placed programmatically via JS for label accuracy; static circles as fallback anchors -->
+            <g id="stageNodes"></g>
+            <text x="260" y="255" text-anchor="middle" fill="#ECEDEF" font-family="IBM Plex Serif" font-style="italic" font-size="18">the</text>
+            <text x="260" y="278" text-anchor="middle" fill="#ECEDEF" font-family="IBM Plex Serif" font-style="italic" font-size="18">loop</text>
+          </svg>
+        </div>
+        <p class="lifecycle-hint">↑ tap / click any stage</p>
+
+        <div class="lifecycle-detail" id="lifecycleDetail"><!-- populated by JS --></div>
+      </div>
+    </section>
+
+    <!-- ============ 4.1 REPRODUCIBILITY ============ -->
+    <section class="block" id="reproducibility">
+      <span class="section-num">4.1 / Worked example</span>
+      <h2>What "better" looks like, in practice</h2>
+      <div class="prose">
+        <p class="lede">The diagnosis is the drift demo above. Here is a first dose of treatment — roughly twenty extra lines over the naive version, moving the work from "trust me" to "verify me."</p>
+      </div>
+
+      <div class="tabs" id="reproTabs">
+        <div class="tab-btns" role="tablist">
+          <button class="tab-btn active" data-tab="naive" role="tab" aria-selected="true">Naive version</button>
+          <button class="tab-btn" data-tab="honest" role="tab" aria-selected="false">With provenance</button>
+        </div>
+        <div class="tab-panel active" data-panel="naive">
+          <div class="codeblock">
+            <span class="cb-label">Stages 1–4, in one cell — exactly where most projects stop</span>
+<pre><span class="c-comment"># Stage 1 — Data</span>
+df = load_breast_cancer(as_frame=True).frame
+
+<span class="c-comment"># Stage 2 — Features (already numeric here; in real projects this stage dominates)</span>
+X, y = df.drop(columns=["target"]), df["target"]
+
+<span class="c-comment"># Stage 3 — Train</span>
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+clf = RandomForestClassifier(n_estimators=200, max_depth=6, random_state=42).fit(X_tr, y_tr)
+
+<span class="c-comment"># Stage 4 — Evaluate</span>
+roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1])  <span class="c-comment"># 0.9940 — but can anyone else get this number?</span>
+
+<span class="c-comment"># Stages 5, 6, 7 — deployment, monitoring, retraining — do not exist in this cell.
+# That gap is the entire subject of this course.</span></pre>
+          </div>
+        </div>
+        <div class="tab-panel" data-panel="honest">
+          <div class="compare-before-after">
+            <div class="codeblock">
+              <span class="cb-label">Every knob, one place</span>
+<pre><span class="c-key">CONFIG</span> = {
+  "seed": 42,
+  "test_size": 0.2,
+  "n_estimators": 200,
+  "max_depth": 6,
+  "threshold": 0.5,
+}
+<span class="c-comment"># + a sha256 hash of the exact
+# training dataframe (16 chars)
+# + captured library versions
+# (numpy, pandas, scikit-learn,
+# python) at training time</span></pre>
+            </div>
+            <div class="metadata-json">
+<span class="cb-label" style="margin-bottom:10px;display:block;">metadata.json — saved beside the model file</span>{<br>
+&nbsp;&nbsp;<span class="k">"model_type"</span>: <span class="v">"RandomForestClassifier"</span>,<br>
+&nbsp;&nbsp;<span class="k">"data_hash"</span>: <span class="v">"a13f...92c0"</span>,<br>
+&nbsp;&nbsp;<span class="k">"metrics"</span>: { <span class="k">"roc_auc"</span>: <span class="v">0.994</span> },<br>
+&nbsp;&nbsp;<span class="k">"environment"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"python"</span>: <span class="v">"3.11"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"scikit_learn"</span>: <span class="v">"…"</span><br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+          </div>
+          <p class="prose">Same model, same metric, very different trustworthiness. Ask what you can now answer that you couldn't before: <em>which exact rows trained this model</em> (the data hash), <em>can a colleague reproduce 0.994 on a laptop</em> (config + environment), and <em>which model is this, six months from now</em> (the file travels with its metadata). When you later meet a tool like MLflow, notice it's doing exactly this — automatically, queryably, at scale. The concept will already be familiar; only the interface is new.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">Five habits, twenty minutes</span>
+        <p>Hyperparameters in one config object, not scattered literals · one recorded seed used everywhere randomness enters · a content hash of the exact training data · library versions captured at training time · a metadata file written beside the model artifact. This is Level 0 done honestly — the floor for everything after.</p>
+      </div>
+    </section>
+
+    <!-- ============ 5. PRINCIPLES ============ -->
+    <section class="block" id="principles">
+      <span class="section-num">05 / Framework</span>
+      <h2>The six MLOps principles</h2>
+      <div class="prose">
+        <p class="lede">Tools change every eighteen months. These principles don't. Learn them and you can evaluate any tool — including ones that don't exist yet — by asking which of these it helps you satisfy.</p>
+      </div>
+
+      <div class="principle-list" id="principleList">
+        <details class="principle" open>
+          <summary><span class="p-num">01</span>Version everything, not just code<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>Every input that can change the output must be versioned and referenceable: code, data, features, model artifacts, hyperparameters, environment, and configuration.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>"The model in production performs differently from the one I evaluated, and I can't determine why." Without versioning, this is unanswerable.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>Git for code. A content hash for every training dataset. A pinned requirements file. Hyperparameters in a config file. A metadata file saved next to every model artifact.</div>
+          </div>
+        </details>
+        <details class="principle">
+          <summary><span class="p-num">02</span>Reproducibility is a hard requirement<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>Anyone on the team, on a different machine, must be able to reproduce a reported result from recorded information alone — no tribal knowledge.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>Unreproducible results are unverifiable results. You can't debug a regression, satisfy an auditor, or safely hand a project over.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>Set and record every random seed. Fix the data split deterministically. Pin library versions. Record the code commit alongside the metrics.</div>
+            <div class="p-caveat">Seeds are necessary but not always sufficient — GPU kernels and non-deterministic library defaults can still shift results slightly. Aim for reproducible within a stated tolerance by default; treat bit-exact reproducibility as a stronger guarantee you engineer deliberately when required.</div>
+          </div>
+        </details>
+        <details class="principle">
+          <summary><span class="p-num">03</span>Automate everything that will be done twice<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>Manual steps are where errors live. If a process will run more than once, it should be a script; if it runs on an event, it should be a pipeline.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>The 3&nbsp;a.m. deploy where step 6 of an 11-step runbook is performed from memory, incorrectly. Also the quieter failure: a process so tedious that people avoid doing it, so retraining stops happening.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>One command trains the model end to end. One command builds the deployable artifact. No sequence of notebook cells run in a specific undocumented order.</div>
+          </div>
+        </details>
+        <details class="principle">
+          <summary><span class="p-num">04</span>Continuous training, because models decay<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>Retraining is a designed, scheduled, monitored part of the system — not an emergency response.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>Slow, silent degradation — a fraud model quietly falling from 89% to 61% catch rate over five weeks.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>Write down the retraining trigger and cadence before you deploy. "We retrain monthly against a fixed holdout" is a policy; "we'll retrain when someone notices" is not.</div>
+          </div>
+        </details>
+        <details class="principle">
+          <summary><span class="p-num">05</span>Monitor the model, not just the server<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>Instrument data quality, input distributions, prediction distributions, segment performance, and business KPIs — and alert a named owner when they move.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>Green dashboards and a broken product — the most dangerous state in ML operations, because nobody is looking for the problem.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>Log every prediction with its inputs, a model version, and a timestamp. You can't investigate what you didn't record.</div>
+          </div>
+        </details>
+        <details class="principle">
+          <summary><span class="p-num">06</span>Governance, collaboration, reviewability<span class="p-chev">⌄</span></summary>
+          <div class="principle-body">
+            <div class="p-block"><span class="p-tag">Statement</span>ML systems are cross-functional. Ownership, documentation, approval paths, and access control must be explicit.</div>
+            <div class="p-block"><span class="p-tag">Failure it prevents</span>The bus factor of one. The unauditable model. The credential committed to a public repository.</div>
+            <div class="p-block"><span class="p-tag">Minimum viable practice</span>A named owner per model. A model card describing intended use, training data, metrics, limitations, and known failure modes. Code review on ML code, including pipeline config. Secrets in a secret store, never in a repo.</div>
+          </div>
+        </details>
+      </div>
+
+      <blockquote class="pull">When you meet a new tool, ask: which principle does this serve, and what did people do before it existed? That question turns tool-learning into engineering judgment.</blockquote>
+    </section>
+
+    <!-- ============ 6. MATURITY ============ -->
+    <section class="block" id="maturity">
+      <span class="section-num">06 / Self-assessment</span>
+      <h2>MLOps maturity: knowing where you are</h2>
+      <div class="prose">
+        <p class="lede">You don't implement MLOps all at once — you move up levels. The most widely used framing (from Google's MLOps whitepaper) has three levels, and placing a project on this scale is a genuinely useful professional skill.</p>
+      </div>
+
+      <div class="maturity-tabs" id="maturityTabs">
+        <button class="mat-btn active" data-mat="0"><span class="mat-level">Level 0</span><span class="mat-title">Manual process</span></button>
+        <button class="mat-btn" data-mat="1"><span class="mat-level">Level 1</span><span class="mat-title">Pipeline automation</span></button>
+        <button class="mat-btn" data-mat="2"><span class="mat-level">Level 2</span><span class="mat-title">CI/CD automation</span></button>
+      </div>
+      <div class="mat-panel active" data-matpanel="0">
+        <ul>
+          <li>Data prep, training, and evaluation happen interactively in notebooks</li>
+          <li>Handoff to deployment is a file and a conversation</li>
+          <li>Deployment is manual and infrequent — quarterly or on request</li>
+          <li>No CI/CD for the ML code; no monitoring of model quality</li>
+          <li>Retraining happens rarely, usually after someone complains</li>
+        </ul>
+        <p class="mat-note">This is where nearly every ML course leaves you, and where a surprising number of real companies still are. Not shameful — a legitimate starting point for a first model. It becomes dangerous once the model starts making real decisions.</p>
+      </div>
+      <div class="mat-panel" data-matpanel="1">
+        <ul>
+          <li>Modular, tested components; one command or trigger runs the whole training flow</li>
+          <li>Experiments are tracked; data and models are versioned</li>
+          <li>Automated data and model validation gates</li>
+          <li>Continuous training is possible — retraining triggered by schedule or drift</li>
+          <li>Deployment of the model is automated, even if pipeline code still ships manually</li>
+          <li>Often a feature store to guarantee train/serve consistency</li>
+        </ul>
+        <p class="mat-note">Most production teams live here, and that's often the right economic choice.</p>
+      </div>
+      <div class="mat-panel" data-matpanel="2">
+        <ul>
+          <li>Source changes trigger build, test, and deployment of the pipeline components themselves</li>
+          <li>Multiple environments (dev → staging → prod) with progressive rollout</li>
+          <li>Automated model promotion through a registry with approval gates</li>
+          <li>Comprehensive monitoring feeding automated retraining</li>
+          <li>Rollback is a tested, one-command operation</li>
+        </ul>
+        <p class="mat-note">Pays for itself with many models, frequent retraining, or regulatory pressure. Deciding <em>not</em> to climb further, for stated reasons, is a legitimate engineering decision. Not knowing which level you're on is not.</p>
+      </div>
+
+      <div class="checklist-tool">
+        <h4>Try it — place your own work on the scale</h4>
+        <p class="ct-sub">Take a project you've actually built and answer honestly. Your score updates as you check items.</p>
+        <div class="checklist-items" id="checklistItems"></div>
+        <div class="checklist-result">
+          <div>
+            <span class="cr-score" id="crScore">0 / 12</span>
+          </div>
+          <div class="cr-level" id="crLevel">Check items to see your level</div>
+          <div class="cr-hint" id="crHint">The rule: fix the <strong>lowest-numbered</strong> unchecked item first. Maturity is climbed in order, not cherry-picked — automated deployment on top of an unreproducible pipeline just ships your irreproducibility faster.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. ROLES ============ -->
+    <section class="block" id="roles">
+      <span class="section-num">07 / People</span>
+      <h2>Roles: who does what</h2>
+      <p class="prose lede">MLOps is cross-functional, and a recurring source of production failure is an unclear boundary between these roles.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Role</th><th>Owns</th><th>Typical artifacts</th></tr></thead>
+          <tbody>
+            <tr><td>Data Engineer</td><td>Reliable data availability and quality</td><td>Pipelines, warehouse tables, schema contracts</td></tr>
+            <tr><td>Data Scientist</td><td>Problem framing, features, model quality</td><td>Experiments, evaluation reports, trained candidates</td></tr>
+            <tr><td>ML Engineer</td><td>Production-grade ML code and serving</td><td>Training pipelines, model services, feature transforms</td></tr>
+            <tr><td>MLOps / Platform Engineer</td><td>The infrastructure everyone else builds on</td><td>CI/CD, containers, registries, monitoring, IaC</td></tr>
+            <tr><td>Software Engineer</td><td>The application consuming predictions</td><td>API integrations, product surfaces</td></tr>
+            <tr><td>Product / Domain Owner</td><td>Business metric, cost asymmetry, acceptance</td><td>Charter, success criteria, launch approval</td></tr>
+            <tr><td>Risk / Compliance</td><td>Fairness, explainability, auditability</td><td>Model cards, audit trails, approvals</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prose">
+        <p>In small teams, one person wears three or four of these hats — the most common situation, and exactly why understanding all of them matters even if your title is "Data Scientist." The Data Scientist / ML Engineer boundary is the most contested one in the market: job titles are inconsistent, so read the responsibilities, not the title.</p>
+      </div>
+    </section>
+
+    <!-- ============ 8. TOOLS ============ -->
+    <section class="block" id="tools">
+      <span class="section-num">08 / Landscape</span>
+      <h2>The tool landscape</h2>
+      <p class="prose lede">The MLOps tool market is crowded and fashion-driven. Don't confuse tool familiarity with competence — anchor on the six principles and treat tools as interchangeable implementations.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lifecycle need</th><th>Common tools</th></tr></thead>
+          <tbody>
+            <tr><td>Code versioning</td><td>Git, GitHub, GitLab</td></tr>
+            <tr><td>Data / artifact versioning</td><td>DVC, LakeFS, Delta Lake, S3 versioning</td></tr>
+            <tr><td>Experiment tracking</td><td><strong>MLflow</strong>, Weights &amp; Biases, Neptune, Comet</td></tr>
+            <tr><td>Hyperparameter tuning</td><td><strong>Optuna</strong>, Ray Tune, Hyperopt</td></tr>
+            <tr><td>App / demo layer</td><td><strong>Streamlit</strong>, Gradio, Dash</td></tr>
+            <tr><td>Packaging</td><td><strong>Docker</strong>, Podman, Buildpacks</td></tr>
+            <tr><td>Registry (images)</td><td><strong>ECR</strong>, DockerHub, GCR</td></tr>
+            <tr><td>Serving / orchestration</td><td><strong>ECS</strong>, Kubernetes, Lambda, Vertex AI</td></tr>
+            <tr><td>CI/CD</td><td><strong>GitHub Actions</strong>, Jenkins, GitLab CI, CircleCI</td></tr>
+            <tr><td>Managed ML platform</td><td><strong>SageMaker</strong>, Vertex AI, Azure ML, Databricks</td></tr>
+            <tr><td>Feature store</td><td><strong>SageMaker Feature Store</strong>, Feast, Tecton</td></tr>
+            <tr><td>Model registry</td><td><strong>SageMaker Model Registry</strong>, MLflow Registry</td></tr>
+            <tr><td>Monitoring</td><td>Evidently, WhyLabs, Prometheus + Grafana, CloudWatch</td></tr>
+            <tr><td>LLM / foundation-model stack</td><td>LangChain, LlamaIndex, vector DBs (pgvector, Pinecone, Chroma), LangSmith, Ragas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="prose">Bolded tools form the most common commercial configuration in industry — a Git-based workflow, open-source experiment tracking, containers, and a major cloud's managed ML platform. The specific tools matter far less than the pattern: skills transfer, and the concepts transfer completely.</p>
+
+      <h3>Does this apply to foundation models?</h3>
+      <div class="prose">
+        <p>A fair question, since a growing share of production "ML" is now an API call to a model you didn't train. Short answer: <strong>the lifecycle survives almost entirely intact — the stages change contents, not their existence.</strong> Business framing, evaluation gates, deployment patterns, monitoring, versioning, rollback, governance, and a named owner all stay the same. Every one of the six principles applies unchanged.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Stage</th><th>Classical ML</th><th>Foundation models</th></tr></thead>
+          <tbody>
+            <tr><td>Data</td><td>Training dataset</td><td>Retrieval corpus, its chunking and embedding strategy, refresh cadence</td></tr>
+            <tr><td>Features</td><td>Transformations</td><td>Prompt templates and context assembly — versioned exactly like code, because they are code</td></tr>
+            <tr><td>Training</td><td>Fit a model</td><td>Prompt iteration, retrieval tuning, occasionally fine-tuning</td></tr>
+            <tr><td>Evaluation</td><td>Held-out metrics</td><td>Curated eval sets, LLM-as-judge, human review — non-determinism means evaluating distributions of outputs, not single answers</td></tr>
+            <tr><td>Deployment</td><td>Your container</td><td>Often a vendor endpoint: latency, rate limits, and token cost become first-class constraints</td></tr>
+            <tr><td>Monitoring</td><td>Drift in features</td><td>Drift in user inputs, plus output quality, refusal rates, hallucination and safety incidents, cost per request</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <span class="callout-label">One genuinely new failure mode</span>
+        <p>The model can change underneath you. A vendor updates a model behind the same API name, and carefully tuned prompts silently behave differently. In classical ML the artifact is frozen and the data moves; here, both can move. Pin model versions explicitly where the vendor allows it, and keep a regression eval set you can re-run on demand.</p>
+      </div>
+    </section>
+
+    <!-- ============ 9. PITFALLS ============ -->
+    <section class="block" id="pitfalls">
+      <span class="section-num">09 / Field notes</span>
+      <h2>Common pitfalls, and how to avoid them</h2>
+      <p class="prose lede">The mistakes that show up repeatedly, from students and professionals alike. Each is cheap to avoid and expensive to fix later.</p>
+      <div class="pitfall-list">
+        <div class="pitfall"><span class="pit-num">1</span><div><h4>Optimizing the model when the bottleneck is the system</h4><p>Three weeks of hyperparameter tuning for +0.4% AUC, on a model that takes six weeks to deploy and has no monitoring. Fix the system; marginal model gains are usually the least valuable work available.</p></div></div>
+        <div class="pitfall"><span class="pit-num">2</span><div><h4>Treating the notebook as the deliverable</h4><p>Notebooks are excellent for exploration and terrible as production artifacts — hidden state, out-of-order execution, no testability, unreviewable diffs. Explore in a notebook; ship a module.</p></div></div>
+        <div class="pitfall"><span class="pit-num">3</span><div><h4>Skipping reproducibility because "it's just an experiment"</h4><p>Every experiment is "just an experiment" until it becomes the model everyone depends on. Seeds and config files cost two minutes.</p></div></div>
+        <div class="pitfall"><span class="pit-num">4</span><div><h4>No data validation</h4><p>Your model will happily consume garbage and return confident nonsense. A schema and range check at the pipeline entrance catches most real incidents.</p></div></div>
+        <div class="pitfall"><span class="pit-num">5</span><div><h4>Deploying without a rollback plan</h4><p>And more common: having a plan you've never executed. Rehearse it once while nothing is on fire.</p></div></div>
+        <div class="pitfall"><span class="pit-num">6</span><div><h4>Broad, convenient credentials</h4><p>"Let's just use admin permissions for now." Later never arrives; the credential ends up in a public repo. Least privilege from day one.</p></div></div>
+        <div class="pitfall"><span class="pit-num">7</span><div><h4>Overly broad, unactionable monitoring</h4><p>An alert that fires daily is not an alert; it's noise, and people build filters to hide it. Alert on things a named human would actually act on.</p></div></div>
+        <div class="pitfall"><span class="pit-num">8</span><div><h4>Building for scale you don't have</h4><p>Kubernetes, a feature store, and a streaming pipeline for one model scoring 400 rows a day. Batch scoring on a schedule is a perfectly respectable production architecture.</p></div></div>
+        <div class="pitfall"><span class="pit-num">9</span><div><h4>No named owner</h4><p>Models without owners don't get monitored, retrained, or retired. They quietly rot in production.</p></div></div>
+        <div class="pitfall"><span class="pit-num">10</span><div><h4>Learning tools instead of principles</h4><p>The five-year half-life of MLOps tooling is real. The six principles have outlived several complete generations of tools.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ============ 10. SUMMARY ============ -->
+    <section class="block" id="summary">
+      <span class="section-num">10 / Synthesis</span>
+      <h2>Class summary</h2>
+      <div class="summary-grid">
+        <div class="summary-card"><h4>The problem</h4><p>ML projects fail in production for engineering and operational reasons, not modelling ones. Non-reproducible results, unversioned data, training/serving skew, undetected drift, impossible rollbacks — none of these are solved by a better model.</p></div>
+        <div class="summary-card"><h4>The discipline</h4><p>MLOps applies software engineering, DevOps, and data engineering practice to ML systems, and adds what those disciplines never had to handle: a model as a versioned, data-dependent, decaying artifact.</p></div>
+        <div class="summary-card"><h4>Three differences from DevOps</h4><p>You version more than code; "correct" is statistical rather than specified, so testing becomes gates and validation; deployed models degrade on their own — which is why CI/CD becomes CI/CD/CT/CM.</p></div>
+        <div class="summary-card"><h4>Maturity</h4><p>Level 0 (manual) → Level 1 (automated training pipeline) → Level 2 (CI/CD-automated platform). Know your level; fix the lowest gap next.</p></div>
+      </div>
+      <div class="loop-line">business framing → data → features → experimentation → evaluation → deployment → monitoring → retrain → <em>(back to data)</em></div>
+      <p class="prose">The six principles, once more: <strong>Version everything</strong> · <strong>Reproducibility</strong> · <strong>Automation</strong> · <strong>Continuous training</strong> · <strong>Monitor the model, not just the server</strong> · <strong>Governance and collaboration</strong>.</p>
+    </section>
+
+    <!-- ============ GLOSSARY ============ -->
+    <section class="block" id="glossary">
+      <span class="section-num">Reference</span>
+      <h2>Glossary</h2>
+      <p class="prose lede">Terms used throughout this reading. Skim now, or search when one shows up unexplained.</p>
+      <input type="text" class="glossary-search" id="glossarySearch" placeholder="Search terms…" aria-label="Search glossary">
+      <dl class="glossary-grid" id="glossaryGrid">
+        <div class="gloss-item"><dt>Artifact</dt><dd>Any versioned output of a stage that a later stage consumes — a dataset snapshot, a trained model file, a container image, an evaluation report.</dd></div>
+        <div class="gloss-item"><dt>Model registry</dt><dd>A catalogue of trained models with versions, stage labels (staging/production/archived), lineage, and approval status.</dd></div>
+        <div class="gloss-item"><dt>Quality gate</dt><dd>An automated pass/fail check in a pipeline; a model or dataset that fails does not proceed — no case-by-case override.</dd></div>
+        <div class="gloss-item"><dt>Lineage</dt><dd>The recorded chain from raw source to deployed model: which data, which code commit, which parameters, which run.</dd></div>
+        <div class="gloss-item"><dt>Training/serving skew</dt><dd>Any difference between how a feature is computed during training and during serving. The most common production ML bug.</dd></div>
+        <div class="gloss-item"><dt>Data drift / covariate shift</dt><dd>The input distribution P(X) moves away from what the model was trained on. Detectable without labels.</dd></div>
+        <div class="gloss-item"><dt>Concept drift</dt><dd>The relationship P(y|X) itself changes. Usually requires labels to detect — the one that actually destroys performance.</dd></div>
+        <div class="gloss-item"><dt>Incumbent (champion)</dt><dd>The model currently in production, and the baseline any candidate must beat.</dd></div>
+        <div class="gloss-item"><dt>Challenger</dt><dd>A candidate model being evaluated against the incumbent before promotion.</dd></div>
+        <div class="gloss-item"><dt>Shadow deployment</dt><dd>Serving live traffic to a new model while discarding its predictions, purely to compare at zero risk.</dd></div>
+        <div class="gloss-item"><dt>Canary</dt><dd>Routing a small slice of real traffic (say 5%) to a new model, watching, then ramping up or rolling back.</dd></div>
+        <div class="gloss-item"><dt>Blue/green</dt><dd>Two complete environments; traffic is flipped from one to the other and can be flipped back instantly.</dd></div>
+        <div class="gloss-item"><dt>Feature store</dt><dd>A system that stores feature definitions and values so the same definition serves both training and inference.</dd></div>
+        <div class="gloss-item"><dt>Model card</dt><dd>A short document shipping with a model: intended use, training data, metrics, limitations, known failure modes, owner.</dd></div>
+        <div class="gloss-item"><dt>CT / CM</dt><dd>Continuous Training and Continuous Monitoring — the ML-specific extensions to CI/CD.</dd></div>
+      </dl>
+      <p class="gloss-empty" id="glossEmpty" hidden>No terms match that search.</p>
+    </section>
+
+    <!-- ============ REFERENCES ============ -->
+    <section class="block" id="references">
+      <span class="section-num">Reference</span>
+      <h2>References and further reading</h2>
+      <div class="ref-group">
+        <h4>Foundational papers</h4>
+        <ul class="ref-list">
+          <li>Sculley et al. (2015), <em>Hidden Technical Debt in Machine Learning Systems</em>, NeurIPS — the origin of the field's core arguments</li>
+          <li>Breck et al. (2017), <em>The ML Test Score: A Rubric for ML Production Readiness</em> — a concrete 28-point checklist you can audit any system against</li>
+          <li>Mitchell et al. (2019), <em>Model Cards for Model Reporting</em> — the model card practice</li>
+          <li>Paleyes et al. (2020), <em>Challenges in Deploying Machine Learning: A Survey of Case Studies</em></li>
+        </ul>
+      </div>
+      <div class="ref-group">
+        <h4>Practitioner references</h4>
+        <ul class="ref-list">
+          <li>Google Cloud, <em>MLOps: Continuous delivery and automation pipelines in machine learning</em> — source of the 0/1/2 maturity model</li>
+          <li>Microsoft, <em>MLOps Maturity Model</em> — a five-level alternative framing</li>
+          <li>Chip Huyen, <em>Designing Machine Learning Systems</em> (O'Reilly)</li>
+          <li>Noah Gift &amp; Alfredo Deza, <em>Practical MLOps</em> (O'Reilly)</li>
+          <li>Treveil et al., <em>Introducing MLOps</em> (O'Reilly)</li>
+        </ul>
+      </div>
+      <div class="ref-group">
+        <h4>Communities and living resources</h4>
+        <ul class="ref-list">
+          <li>MLOps Community (mlops.community) — talks, podcasts, a large practitioner Slack</li>
+          <li>Made With ML (madewithml.com) — free applied MLOps course</li>
+          <li>Awesome MLOps (github.com/visenger/awesome-mlops) — curated tool and reading list</li>
+          <li>Evidently AI blog — practical writing on drift and monitoring</li>
+        </ul>
+      </div>
+    </section>
+
+  </article>
+</div>
+
+<footer>
+  <div class="foot-title">Intro to MLOPS post read</div>
+  <div class="foot-sub">A model is not a deliverable. The system around it is.</div>
+  <a class="back-top" href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Back to top</a>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Reading progress ---------- */
+  var progressEl = document.getElementById('progress');
+  var readoutEl = document.getElementById('readout');
+  function updateProgress(){
+    var h = document.documentElement;
+    var scrolled = h.scrollTop;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? Math.min(100, Math.max(0,(scrolled/max)*100)) : 0;
+    progressEl.style.width = pct + '%';
+    readoutEl.textContent = Math.round(pct) + '%';
+  }
+  document.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
+  /* ---------- Mobile TOC toggle ---------- */
+  var navToggle = document.getElementById('navToggle');
+  var toc = document.getElementById('toc');
+  navToggle.addEventListener('click', function(){
+    var open = toc.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open ? 'true':'false');
+  });
+  toc.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ toc.classList.remove('open'); });
+  });
+
+  /* ---------- TOC active section highlight ---------- */
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.block[id]'));
+  var tocLinks = {};
+  toc.querySelectorAll('a').forEach(function(a){
+    tocLinks[a.getAttribute('href').slice(1)] = a;
+  });
+  if('IntersectionObserver' in window){
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var id = entry.target.id;
+        var link = tocLinks[id];
+        if(!link) return;
+        if(entry.isIntersecting){
+          Object.keys(tocLinks).forEach(function(k){ tocLinks[k].classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ obs.observe(s); });
+  }
+
+  /* ---------- Generic tabs ---------- */
+  document.querySelectorAll('.tabs').forEach(function(tabsEl){
+    var btns = tabsEl.querySelectorAll('.tab-btn');
+    var panels = tabsEl.querySelectorAll('.tab-panel');
+    btns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        btns.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+        panels.forEach(function(p){ p.classList.remove('active'); });
+        btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+        var target = tabsEl.querySelector('.tab-panel[data-panel="'+btn.dataset.tab+'"]');
+        if(target) target.classList.add('active');
+      });
+    });
+  });
+
+  /* ---------- Incident log (Section 1) ---------- */
+  var incidents = [
+    { what:"Engineering asks for the model. The data scientist sends fraud_final_v3_USE_THIS.ipynb and a .pkl file.", why:"No packaging standard — the model is not a deployable artifact." },
+    { what:"The engineer runs the notebook. It crashes on a pandas version mismatch.", why:"No dependency pinning, no reproducible environment." },
+    { what:"Fixed. It runs — but ROC-AUC is 0.91, not 0.96.", why:"No random seed, no fixed data split. The reported number was never reproducible." },
+    { what:"The notebook reads a personal downloads folder. Nobody knows how that file was produced.", why:"No data versioning, no data lineage." },
+    { what:"It ships after three months. Two features are computed differently in production than in training.", why:"Training/serving skew — the classic ML failure mode." },
+    { what:"Month four: fraud catch rate quietly drops from 89% to 61%. Nobody notices for five weeks.", why:"No monitoring, no drift detection, no alerting." },
+    { what:"Someone says \"let's roll back.\" Nobody knows which model version is live, or where the previous one is.", why:"No model registry, no versioned deployments." }
+  ];
+  var logEl = document.getElementById('incidentLog');
+  incidents.forEach(function(item, i){
+    var row = document.createElement('div');
+    row.className = 'incident-row';
+    row.dataset.open = 'false';
+    row.innerHTML =
+      '<button type="button" aria-expanded="false">'+
+        '<span class="idx">'+String(i+1).padStart(2,'0')+'</span>'+
+        '<span class="txt">'+item.what+'</span>'+
+        '<span class="chev">+</span>'+
+      '</button>'+
+      '<div class="incident-detail"><div class="incident-detail-inner">↳ '+item.why+'</div></div>';
+    var btn = row.querySelector('button');
+    btn.addEventListener('click', function(){
+      var isOpen = row.dataset.open === 'true';
+      row.dataset.open = isOpen ? 'false' : 'true';
+      btn.setAttribute('aria-expanded', isOpen ? 'false':'true');
+    });
+    logEl.appendChild(row);
+  });
+
+  /* ---------- Drift demo chart ---------- */
+  var driftData = {
+    combined: { v1:0.855, v2:0.556, label2:"Q2<br>(deployed world)", color2:"#C4675B",
+      text:"<strong>Combined drift.</strong> Fraudsters adapted — they moved from large, infrequent transactions to many small ones at higher velocity — so both the inputs and the input→output relationship shifted at once. AUC falls from 0.855 to 0.556, barely better than guessing, while every conventional health signal stays green." },
+    data: { v1:0.855, v2:0.905, label2:"Q2 inputs,<br>original relationship", color2:"#5FBF8F",
+      text:"<strong>Pure data drift.</strong> Keep the shifted Q2 input distributions, but score them with the original relationship. AUC doesn't fall here — it rises slightly, because the shifted inputs happen to separate the classes more cleanly. The model is still correct about how the world works; it's simply seeing a different slice of it. Lesson: <em>input drift is an alert, not an incident.</em>" },
+    concept: { v1:0.855, v2:0.465, label2:"Q1 inputs,<br>new relationship", color2:"#C4675B",
+      text:"<strong>Pure concept drift.</strong> Restore the original Q1 input distributions, but keep the new coefficients — the sign on transaction amount flips. AUC falls below 0.5: the model is now confidently ranking backwards, worse than random. This is the drift that actually destroys performance, and it's usually the one you can't see without labels." }
+  };
+  var bar1 = document.getElementById('bar1'), bar2 = document.getElementById('bar2');
+  var barVal1 = document.getElementById('barVal1'), barVal2 = document.getElementById('barVal2');
+  var bar2label = document.getElementById('bar2label');
+  var driftExplain = document.getElementById('driftExplain');
+  var maxBarHeight = 150;
+  function renderDrift(key){
+    var d = driftData[key];
+    barVal1.textContent = d.v1.toFixed(3);
+    barVal2.textContent = d.v2.toFixed(3);
+    bar2label.innerHTML = d.label2;
+    bar1.style.background = '#6E747B';
+    bar2.style.background = d.color2;
+    requestAnimationFrame(function(){
+      bar1.style.height = Math.max(4,(d.v1/1)*maxBarHeight) + 'px';
+      bar2.style.height = Math.max(4,(Math.max(d.v2,0)/1)*maxBarHeight) + 'px';
+    });
+    driftExplain.innerHTML = d.text;
+  }
+  document.querySelectorAll('.drift-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.drift-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderDrift(btn.dataset.scenario);
+    });
+  });
+  // init once visible
+  var driftObs = new IntersectionObserver(function(entries, o){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ renderDrift('combined'); o.disconnect(); }
+    });
+  }, { threshold: 0.3 });
+  driftObs.observe(document.querySelector('.drift-demo'));
+
+  /* ---------- Lifecycle diagram ---------- */
+  var stages = [
+    { n:0, short:"Business framing", sub:"What decision improves? What metric proves it?", what:["Who or what acts on the prediction — \"flag for review\" vs. \"auto-decline\" are different products entirely","The business metric (fraud losses prevented per month, not ROC-AUC)","The cost asymmetry between a false positive and a false negative","Latency and volume requirements, and the baseline you must beat"], contrib:"These answers get written down in a project charter and, later, a model card that ships with the model." },
+    { n:1, short:"Data", sub:"Sourcing, validation, versioning", what:["Training on a dataset nobody can reconstruct","Leakage — a feature that encodes the target","Splitting randomly when the data is temporal","Silent upstream schema changes; sampling bias"], contrib:"Dataset snapshots and hashes, schema contracts, automated data validation as a pipeline gate, and lineage." },
+    { n:2, short:"Feature engineering", sub:"Raw data → model inputs", what:["Training/serving skew — the single most common production ML bug: a feature computed one way in training and another way at serving time"], contrib:"Shared transformation code between training and serving, persisted fitted transformers, and feature stores for a single feature definition. Note: a feature store reduces skew, it doesn't abolish it." },
+    { n:3, short:"Experimentation & training", sub:"Every run must be recorded", what:["Fifty experiments in a notebook, results in scrollback","The best result can't be reproduced two weeks later","No record of which data and code produced the winning model"], contrib:"Experiment tracking — automatically logging parameters, metrics, artifacts, code version, and environment for every run." },
+    { n:4, short:"Evaluation & validation", sub:"Should this model ship?", what:["Choosing a metric insensitive to your actual class imbalance","Comparing against nothing instead of the incumbent","Missing segment-level performance and fairness checks"], contrib:"These become automated quality gates. A model that fails the gate is not deployed — no case-by-case override." },
+    { n:5, short:"Deployment", sub:"Batch, real-time, streaming, or edge", what:["No versioned deployment record of what's actually live","No safe rollout pattern — straight to 100% of traffic"], contrib:"Containerization so the environment travels with the model, automated deploys, and a registry so you always know what's live and what to roll back to. Patterns: shadow, canary, blue/green, A/B." },
+    { n:6, short:"Monitoring", sub:"Service health + model health", what:["Watching only uptime and latency while predictions quietly rot","Ground-truth labels are delayed — you often can't measure true accuracy for months"], contrib:"Layered monitoring by how fast the signal arrives: input drift instantly, prediction drift within minutes, business metrics within days, true accuracy eventually." },
+    { n:7, short:"Retrain & improve", sub:"Closing the loop", what:["No defined trigger — retraining happens only after a complaint","Untested rollback, which is not rollback, it's hope"], contrib:"A written policy for trigger, scope, and approval. The standard pattern is champion/challenger: the incumbent keeps serving while the candidate is evaluated against it on the same traffic." }
+  ];
+  var svg = document.getElementById('lifecycleSvg');
+  var nodesG = document.getElementById('stageNodes');
+  var cx=260, cy=260, r=175;
+  stages.forEach(function(s, i){
+    var angle = (Math.PI*2 * i / stages.length) - Math.PI/2;
+    var x = cx + r*Math.cos(angle);
+    var y = cy + r*Math.sin(angle);
+    var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','stage-node');
+    g.setAttribute('data-stage', s.n);
+    g.setAttribute('tabindex','0');
+    g.setAttribute('role','button');
+    g.setAttribute('aria-label', 'Stage ' + s.n + ': ' + s.short);
+    var circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 26);
+    circle.setAttribute('fill', '#16181B'); circle.setAttribute('stroke', '#2B2E32'); circle.setAttribute('stroke-width','1.5');
+    var num = document.createElementNS('http://www.w3.org/2000/svg','text');
+    num.setAttribute('class','stage-num'); num.setAttribute('x', x); num.setAttribute('y', y+5);
+    num.setAttribute('text-anchor','middle'); num.setAttribute('font-size','15'); num.textContent = s.n;
+    var labelOffsetY = y + (Math.sin(angle) > 0.3 ? 44 : (Math.sin(angle) < -0.3 ? -38 : 6));
+    var labelAnchor = Math.cos(angle) > 0.3 ? 'start' : (Math.cos(angle) < -0.3 ? 'end' : 'middle');
+    var labelX = x + (Math.cos(angle) > 0.3 ? 32 : (Math.cos(angle) < -0.3 ? -32 : 0));
+    var label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('class','stage-label'); label.setAttribute('x', labelX); label.setAttribute('y', labelOffsetY);
+    label.setAttribute('text-anchor', labelAnchor); label.setAttribute('font-size','11');
+    label.textContent = s.short;
+    g.appendChild(circle); g.appendChild(num); g.appendChild(label);
+    nodesG.appendChild(g);
+  });
+
+  var detailEl = document.getElementById('lifecycleDetail');
+  function renderStage(n){
+    var s = stages[n];
+    detailEl.innerHTML =
+      '<h4>Stage '+s.n+' — '+s.short+'</h4>'+
+      '<span class="stage-sub">'+s.sub+'</span>'+
+      '<h5>What goes wrong</h5>'+
+      '<ul>'+s.what.map(function(w){return '<li>'+w+'</li>';}).join('')+'</ul>'+
+      '<h5>MLOps contribution</h5>'+
+      '<div class="mlops-contrib">'+s.contrib+'</div>';
+    document.querySelectorAll('.stage-node').forEach(function(node){
+      node.dataset.active = (parseInt(node.dataset.stage,10) === n) ? 'true' : 'false';
+    });
+  }
+  nodesG.querySelectorAll('.stage-node').forEach(function(node){
+    node.addEventListener('click', function(){ renderStage(parseInt(node.dataset.stage,10)); });
+    node.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); renderStage(parseInt(node.dataset.stage,10)); } });
+  });
+  renderStage(0);
+
+  /* ---------- Maturity tabs ---------- */
+  document.querySelectorAll('.mat-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.mat-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.mat-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.mat-panel[data-matpanel="'+btn.dataset.mat+'"]').classList.add('active');
+    });
+  });
+
+  /* ---------- Maturity checklist tool ---------- */
+  var questions = [
+    "Can someone else reproduce your headline metric from your repository alone?",
+    "Is the exact training dataset for your best model recoverable today?",
+    "Are all hyperparameters in a config file rather than scattered as literals?",
+    "Does one command run data prep → train → evaluate, end to end?",
+    "Is every experiment's parameters and metrics recorded automatically?",
+    "Are dependencies pinned, so the environment is rebuildable?",
+    "Is there an automated gate that would block a bad model from deploying?",
+    "Is deployment automated and repeatable, with no manual runbook?",
+    "Would you detect input drift within a day of it starting?",
+    "Is there a written — and tested — rollback procedure?",
+    "Does the model have a named owner and a model card?",
+    "Is retraining triggered by policy rather than by a complaint?"
+  ];
+  var checklistItemsEl = document.getElementById('checklistItems');
+  questions.forEach(function(q, i){
+    var row = document.createElement('label');
+    row.className = 'checklist-item';
+    row.innerHTML = '<input type="checkbox" data-idx="'+i+'"><span class="ci-num">Q'+(i+1)+'</span><span class="ci-text">'+q+'</span>';
+    checklistItemsEl.appendChild(row);
+  });
+  var crScore = document.getElementById('crScore');
+  var crLevel = document.getElementById('crLevel');
+  function updateChecklist(){
+    var checked = checklistItemsEl.querySelectorAll('input:checked');
+    var n = checked.length;
+    crScore.textContent = n + ' / 12';
+    var level;
+    if(n<=3) level='Level 0 — manual';
+    else if(n<=8) level='Partial Level 1 — automating, real gaps';
+    else if(n<=10) level='Solid Level 1';
+    else level='Level 2';
+    crLevel.textContent = level;
+    checklistItemsEl.querySelectorAll('.checklist-item').forEach(function(item){
+      item.classList.toggle('checked', item.querySelector('input').checked);
+    });
+  }
+  checklistItemsEl.addEventListener('change', updateChecklist);
+  updateChecklist();
+
+  /* ---------- Glossary search ---------- */
+  var glossarySearch = document.getElementById('glossarySearch');
+  var glossItems = Array.prototype.slice.call(document.querySelectorAll('.gloss-item'));
+  var glossEmpty = document.getElementById('glossEmpty');
+  glossarySearch.addEventListener('input', function(){
+    var q = glossarySearch.value.trim().toLowerCase();
+    var visible = 0;
+    glossItems.forEach(function(item){
+      var text = item.textContent.toLowerCase();
+      var match = text.indexOf(q) !== -1;
+      item.hidden = !match;
+      if(match) visible++;
+    });
+    glossEmpty.hidden = visible !== 0;
+  });
+
+})();
+</script>
+</body>
+</html>
