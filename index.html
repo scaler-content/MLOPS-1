@@ -346,26 +346,17 @@ td code, p code, li code{
 .mat-panel li{ margin-bottom:7px; }
 .mat-panel .mat-note{ font-size:14px; color:var(--text-soft); border-top:1px solid var(--border-soft); margin-top:14px; padding-top:14px; }
 
-/* Checklist tool */
-.checklist-tool{ border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised); padding:22px 24px; margin:2.2em 0; }
-.checklist-tool h4{ font-size:1.05rem; margin:0 0 4px; }
-.checklist-tool .ct-sub{ font-size:13.5px; color:var(--text-soft); margin-bottom:18px; }
-.checklist-items{ display:flex; flex-direction:column; gap:2px; }
-.checklist-item{
-  display:flex; align-items:flex-start; gap:12px; padding:10px 4px; border-bottom:1px solid var(--border-soft); cursor:pointer;
+/* Checkpoint list */
+.checkpoint-block{ border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-raised); padding:24px 26px; margin:2.2em 0 1.6em; }
+.checkpoint-list{ counter-reset:cp; list-style:none; margin:1.4em 0; padding:0; max-width:66ch; }
+.checkpoint-list li{
+  counter-increment:cp; position:relative; padding:11px 0 11px 40px; border-bottom:1px solid var(--border-soft);
+  font-size:15px; color:var(--text-soft);
 }
-.checklist-item input{ margin-top:3px; accent-color:var(--amber); width:16px; height:16px; flex:none; }
-.checklist-item .ci-num{ font-family:var(--mono); font-size:12px; color:var(--text-mute); flex:none; padding-top:1px; }
-.checklist-item span.ci-text{ font-size:14.5px; color:var(--text-soft); }
-.checklist-item.checked span.ci-text{ color:var(--text); }
-.checklist-result{
-  margin-top:20px; padding:16px 18px; border-radius:var(--radius); border:1px solid var(--border);
-  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
-  font-family:var(--mono); background:var(--bg);
+.checkpoint-list li:first-child{ border-top:1px solid var(--border-soft); }
+.checkpoint-list li::before{
+  content:"Q" counter(cp); position:absolute; left:0; top:12px; font-family:var(--mono); font-size:12px; color:var(--amber);
 }
-.checklist-result .cr-score{ font-size:1.4rem; color:var(--amber); }
-.checklist-result .cr-level{ font-size:13px; color:var(--text-soft); }
-.checklist-result .cr-hint{ width:100%; font-size:13px; color:var(--text-mute); font-family:var(--sans); margin-top:6px; }
 
 /* ===================== PITFALLS ===================== */
 .pitfall-list{ counter-reset:pit; margin:2em 0; }
@@ -890,17 +881,30 @@ roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1])  <span class="c-comment"># 0.
         <p class="mat-note">Pays for itself with many models, frequent retraining, or regulatory pressure. Deciding <em>not</em> to climb further, for stated reasons, is a legitimate engineering decision. Not knowing which level you're on is not.</p>
       </div>
 
-      <div class="checklist-tool">
-        <h4>Try it — place your own work on the scale</h4>
-        <p class="ct-sub">Take a project you've actually built and answer honestly. Your score updates as you check items.</p>
-        <div class="checklist-items" id="checklistItems"></div>
-        <div class="checklist-result">
-          <div>
-            <span class="cr-score" id="crScore">0 / 12</span>
-          </div>
-          <div class="cr-level" id="crLevel">Check items to see your level</div>
-          <div class="cr-hint" id="crHint">The rule: fix the <strong>lowest-numbered</strong> unchecked item first. Maturity is climbed in order, not cherry-picked — automated deployment on top of an unreproducible pipeline just ships your irreproducibility faster.</div>
-        </div>
+      <div class="checkpoint-block">
+        <h3 style="margin-top:0;">Checkpoint — place your own work on the scale</h3>
+        <p class="prose">Take a project you have actually built — a course project, an internship task, a Kaggle pipeline — and answer these twelve questions honestly. Each one is a yes or a no.</p>
+        <ol class="checkpoint-list">
+          <li>Can someone else reproduce your headline metric from your repository alone?</li>
+          <li>Is the exact training dataset for your best model recoverable today?</li>
+          <li>Are all hyperparameters in a config file rather than scattered as literals?</li>
+          <li>Does one command run data prep → train → evaluate, end to end?</li>
+          <li>Is every experiment's parameters and metrics recorded automatically?</li>
+          <li>Are dependencies pinned, so the environment is rebuildable?</li>
+          <li>Is there an automated gate that would block a bad model from deploying?</li>
+          <li>Is deployment automated and repeatable, with no manual runbook?</li>
+          <li>Would you detect input drift within a day of it starting?</li>
+          <li>Is there a written — and <em>tested</em> — rollback procedure?</li>
+          <li>Does the model have a named owner and a model card?</li>
+          <li>Is retraining triggered by policy rather than by a complaint?</li>
+        </ol>
+        <p class="prose">Scoring: 0–3 is Level 0. 4–8 is a partial Level 1, automating with real gaps. 9–10 is a solid Level 1. 11–12 is Level 2.</p>
+        <p class="prose">Then write down three things: your level, the <strong>lowest-numbered</strong> question you answered no to, and the concrete action that would close that gap this week.</p>
+      </div>
+
+      <div class="callout">
+        <span class="callout-label">The rule for what comes next</span>
+        <p>Fix the lowest-numbered gap first. Maturity is climbed in order, not cherry-picked — automated deployment on top of an unreproducible pipeline just ships your irreproducibility faster.</p>
       </div>
     </section>
 
@@ -1289,47 +1293,6 @@ roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1])  <span class="c-comment"># 0.
       document.querySelector('.mat-panel[data-matpanel="'+btn.dataset.mat+'"]').classList.add('active');
     });
   });
-
-  /* ---------- Maturity checklist tool ---------- */
-  var questions = [
-    "Can someone else reproduce your headline metric from your repository alone?",
-    "Is the exact training dataset for your best model recoverable today?",
-    "Are all hyperparameters in a config file rather than scattered as literals?",
-    "Does one command run data prep → train → evaluate, end to end?",
-    "Is every experiment's parameters and metrics recorded automatically?",
-    "Are dependencies pinned, so the environment is rebuildable?",
-    "Is there an automated gate that would block a bad model from deploying?",
-    "Is deployment automated and repeatable, with no manual runbook?",
-    "Would you detect input drift within a day of it starting?",
-    "Is there a written — and tested — rollback procedure?",
-    "Does the model have a named owner and a model card?",
-    "Is retraining triggered by policy rather than by a complaint?"
-  ];
-  var checklistItemsEl = document.getElementById('checklistItems');
-  questions.forEach(function(q, i){
-    var row = document.createElement('label');
-    row.className = 'checklist-item';
-    row.innerHTML = '<input type="checkbox" data-idx="'+i+'"><span class="ci-num">Q'+(i+1)+'</span><span class="ci-text">'+q+'</span>';
-    checklistItemsEl.appendChild(row);
-  });
-  var crScore = document.getElementById('crScore');
-  var crLevel = document.getElementById('crLevel');
-  function updateChecklist(){
-    var checked = checklistItemsEl.querySelectorAll('input:checked');
-    var n = checked.length;
-    crScore.textContent = n + ' / 12';
-    var level;
-    if(n<=3) level='Level 0 — manual';
-    else if(n<=8) level='Partial Level 1 — automating, real gaps';
-    else if(n<=10) level='Solid Level 1';
-    else level='Level 2';
-    crLevel.textContent = level;
-    checklistItemsEl.querySelectorAll('.checklist-item').forEach(function(item){
-      item.classList.toggle('checked', item.querySelector('input').checked);
-    });
-  }
-  checklistItemsEl.addEventListener('change', updateChecklist);
-  updateChecklist();
 
   /* ---------- Glossary search ---------- */
   var glossarySearch = document.getElementById('glossarySearch');
